@@ -1,9 +1,12 @@
+// src/main/java/com/masa/appointment/appointment/controller/AppointmentController.java
 package com.masa.appointment.appointment.controller;
 
 import com.masa.appointment.appointment.entity.AppointmentEntity;
 import com.masa.appointment.appointment.service.AppointmentService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,18 +24,26 @@ public class AppointmentController {
         this.appointmentService = appointmentService;
     }
 
-    // DTO بسيط للـ request
-    public static class CreateAppointmentRequest {
+    public static class UpsertAppointmentRequest {
         @NotBlank public String clientName;
         @NotNull public Long serviceId;
-        @NotNull public LocalDate date;       // "2025-12-30"
-        @NotNull public LocalTime startTime;  // "10:00"
-        @NotNull public LocalTime endTime;    // "10:30"
+
+        @NotNull
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        public LocalDate date;       // "2025-12-30"
+
+        @NotNull
+        @DateTimeFormat(iso = DateTimeFormat.ISO.TIME)
+        public LocalTime startTime;  // "10:00"
+
+        @NotNull
+        @DateTimeFormat(iso = DateTimeFormat.ISO.TIME)
+        public LocalTime endTime;    // "10:30"
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public AppointmentEntity create(@RequestBody CreateAppointmentRequest req) {
+    public AppointmentEntity create(@Valid @RequestBody UpsertAppointmentRequest req) {
         return appointmentService.create(
                 req.clientName,
                 req.serviceId,
@@ -42,8 +53,16 @@ public class AppointmentController {
         );
     }
 
+    // GET /api/appointments  OR  GET /api/appointments?date=2025-12-30
     @GetMapping
-    public List<AppointmentEntity> list() {
+    public List<AppointmentEntity> list(
+            @RequestParam(value = "date", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate date
+    ) {
+        if (date != null) {
+            return appointmentService.findByDate(date);
+        }
         return appointmentService.findAll();
     }
 
@@ -52,10 +71,21 @@ public class AppointmentController {
         return appointmentService.findById(id);
     }
 
+    @PutMapping("/{id}")
+    public AppointmentEntity update(@PathVariable Long id, @Valid @RequestBody UpsertAppointmentRequest req) {
+        return appointmentService.update(
+                id,
+                req.clientName,
+                req.serviceId,
+                req.date,
+                req.startTime,
+                req.endTime
+        );
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         appointmentService.delete(id);
     }
-
 }

@@ -13,11 +13,13 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
     @Query("""
         SELECT COUNT(a) > 0
         FROM AppointmentEntity a
-        WHERE a.date = :date
-          AND a.startTime < :newEnd
-          AND a.endTime > :newStart
+        WHERE a.service.id = :serviceId
+          AND a.date = :date
+          AND :newStart < a.endTime
+          AND :newEnd   > a.startTime
     """)
     boolean existsOverlap(
+            @Param("serviceId") Long serviceId,
             @Param("date") LocalDate date,
             @Param("newStart") LocalTime newStart,
             @Param("newEnd") LocalTime newEnd

@@ -2,6 +2,7 @@ package com.masa.appointment.appointment.entity;
 
 import com.masa.appointment.service_catalog.entity.ServiceEntity;
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -13,7 +14,6 @@ public class AppointmentEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // مين حجز (هلق نخليها نص بسيط، وبعدين منربطها بـ User)
     @Column(nullable = false)
     private String clientName;
 
@@ -26,14 +26,11 @@ public class AppointmentEntity {
     @Column(nullable = false)
     private LocalTime endTime;
 
-    // أي خدمة (ربط مع ServiceEntity)
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "service_id", nullable = false)
     private ServiceEntity service;
 
-    public AppointmentEntity() {}
-
-    // Getters/Setters
+    // --- getters/setters ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

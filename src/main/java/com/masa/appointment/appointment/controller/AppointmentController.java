@@ -1,12 +1,10 @@
-// src/main/java/com/masa/appointment/appointment/controller/AppointmentController.java
 package com.masa.appointment.appointment.controller;
 
 import com.masa.appointment.appointment.entity.AppointmentEntity;
+import com.masa.appointment.appointment.entity.AppointmentStatus;
 import com.masa.appointment.appointment.service.AppointmentService;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,45 +22,27 @@ public class AppointmentController {
         this.appointmentService = appointmentService;
     }
 
-    public static class UpsertAppointmentRequest {
+    // DTO للـ create/update
+    public static class AppointmentRequest {
         @NotBlank public String clientName;
         @NotNull public Long serviceId;
+        @NotNull public LocalDate date;       // "2025-12-30"
+        @NotNull public LocalTime startTime;  // "10:00"
+        @NotNull public LocalTime endTime;    // "10:30"
+    }
 
-        @NotNull
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-        public LocalDate date;       // "2025-12-30"
-
-        @NotNull
-        @DateTimeFormat(iso = DateTimeFormat.ISO.TIME)
-        public LocalTime startTime;  // "10:00"
-
-        @NotNull
-        @DateTimeFormat(iso = DateTimeFormat.ISO.TIME)
-        public LocalTime endTime;    // "10:30"
+    public static class ChangeStatusRequest {
+        @NotNull public AppointmentStatus status; // "APPROVED" ...
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public AppointmentEntity create(@Valid @RequestBody UpsertAppointmentRequest req) {
-        return appointmentService.create(
-                req.clientName,
-                req.serviceId,
-                req.date,
-                req.startTime,
-                req.endTime
-        );
+    public AppointmentEntity create(@RequestBody AppointmentRequest req) {
+        return appointmentService.create(req.clientName, req.serviceId, req.date, req.startTime, req.endTime);
     }
 
-    // GET /api/appointments  OR  GET /api/appointments?date=2025-12-30
     @GetMapping
-    public List<AppointmentEntity> list(
-            @RequestParam(value = "date", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate date
-    ) {
-        if (date != null) {
-            return appointmentService.findByDate(date);
-        }
+    public List<AppointmentEntity> list() {
         return appointmentService.findAll();
     }
 
@@ -72,15 +52,13 @@ public class AppointmentController {
     }
 
     @PutMapping("/{id}")
-    public AppointmentEntity update(@PathVariable Long id, @Valid @RequestBody UpsertAppointmentRequest req) {
-        return appointmentService.update(
-                id,
-                req.clientName,
-                req.serviceId,
-                req.date,
-                req.startTime,
-                req.endTime
-        );
+    public AppointmentEntity update(@PathVariable Long id, @RequestBody AppointmentRequest req) {
+        return appointmentService.update(id, req.clientName, req.serviceId, req.date, req.startTime, req.endTime);
+    }
+
+    @PatchMapping("/{id}/status")
+    public AppointmentEntity changeStatus(@PathVariable Long id, @RequestBody ChangeStatusRequest req) {
+        return appointmentService.changeStatus(id, req.status);
     }
 
     @DeleteMapping("/{id}")

@@ -1,6 +1,7 @@
 package com.masa.appointment.appointment.repo;
 
 import com.masa.appointment.appointment.entity.AppointmentEntity;
+import com.masa.appointment.appointment.entity.AppointmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,26 +14,29 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
 
     List<AppointmentEntity> findByDate(LocalDate date);
 
-    // create overlap check
+    // create overlap check (ignore CANCELLED)
     @Query("""
         SELECT COUNT(a) > 0
         FROM AppointmentEntity a
         WHERE a.date = :date
+          AND a.status <> :cancelled
           AND a.startTime < :newEnd
           AND a.endTime > :newStart
     """)
     boolean existsOverlap(
             @Param("date") LocalDate date,
             @Param("newStart") LocalTime newStart,
-            @Param("newEnd") LocalTime newEnd
+            @Param("newEnd") LocalTime newEnd,
+            @Param("cancelled") AppointmentStatus cancelled
     );
 
-    // update overlap check (exclude same appointment id)
+    // update overlap check (exclude same appointment id) (ignore CANCELLED)
     @Query("""
         SELECT COUNT(a) > 0
         FROM AppointmentEntity a
         WHERE a.date = :date
           AND a.id <> :excludeId
+          AND a.status <> :cancelled
           AND a.startTime < :newEnd
           AND a.endTime > :newStart
     """)
@@ -40,6 +44,7 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
             @Param("date") LocalDate date,
             @Param("excludeId") Long excludeId,
             @Param("newStart") LocalTime newStart,
-            @Param("newEnd") LocalTime newEnd
+            @Param("newEnd") LocalTime newEnd,
+            @Param("cancelled") AppointmentStatus cancelled
     );
 }

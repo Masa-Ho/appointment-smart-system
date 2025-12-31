@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+
 @Entity
 @Table(name = "appointments")
 public class AppointmentEntity {
@@ -30,6 +31,9 @@ public class AppointmentEntity {
     @JoinColumn(name = "service_id", nullable = false)
     private ServiceEntity service;
 
+    @Enumerated(EnumType.STRING)
+    private AppointmentStatus status = AppointmentStatus.PENDING;
+
     // --- getters/setters ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -48,4 +52,9 @@ public class AppointmentEntity {
 
     public ServiceEntity getService() { return service; }
     public void setService(ServiceEntity service) { this.service = service; }
+
+    public AppointmentStatus getStatus() {return status;}
+
+    public void setStatus(AppointmentStatus status) {this.status = status;}
+
 }

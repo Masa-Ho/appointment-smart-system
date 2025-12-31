@@ -1,6 +1,7 @@
 package com.masa.appointment.appointment.service;
 
 import com.masa.appointment.appointment.entity.AppointmentEntity;
+import com.masa.appointment.appointment.entity.AppointmentStatus;
 import com.masa.appointment.appointment.repo.AppointmentRepository;
 import com.masa.appointment.service_catalog.entity.ServiceEntity;
 import com.masa.appointment.service_catalog.repo.ServiceRepository;
@@ -26,12 +27,24 @@ public class AppointmentService {
     }
 
     public AppointmentEntity create(String clientName, Long serviceId, LocalDate date, LocalTime startTime, LocalTime endTime) {
-        validateBasic(clientName, serviceId, date, startTime, endTime);
+
+        if (clientName == null || clientName.isBlank()) {
+            throw new ResponseStatusException(BAD_REQUEST, "clientName is required");
+        }
+        if (serviceId == null) {
+            throw new ResponseStatusException(BAD_REQUEST, "serviceId is required");
+        }
+        if (date == null || startTime == null || endTime == null) {
+            throw new ResponseStatusException(BAD_REQUEST, "date/startTime/endTime are required");
+        }
+        if (!endTime.isAfter(startTime)) {
+            throw new ResponseStatusException(BAD_REQUEST, "endTime must be after startTime");
+        }
 
         ServiceEntity service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Service not found with id: " + serviceId));
 
-        boolean overlap = appointmentRepository.existsOverlap(date, startTime, endTime);
+        boolean overlap = appointmentRepository.existsOverlap(date, startTime, endTime, AppointmentStatus.CANCELLED);
         if (overlap) {
             throw new ResponseStatusException(BAD_REQUEST, "Appointment overlaps with an existing appointment");
         }
@@ -42,19 +55,13 @@ public class AppointmentService {
         a.setStartTime(startTime);
         a.setEndTime(endTime);
         a.setService(service);
+        a.setStatus(AppointmentStatus.PENDING);
 
         return appointmentRepository.save(a);
     }
 
     public List<AppointmentEntity> findAll() {
         return appointmentRepository.findAll();
-    }
-
-    public List<AppointmentEntity> findByDate(LocalDate date) {
-        if (date == null) {
-            throw new ResponseStatusException(BAD_REQUEST, "date is required");
-        }
-        return appointmentRepository.findByDate(date);
     }
 
     public AppointmentEntity findById(Long id) {
@@ -64,12 +71,24 @@ public class AppointmentService {
 
     public AppointmentEntity update(Long id, String clientName, Long serviceId, LocalDate date, LocalTime startTime, LocalTime endTime) {
         AppointmentEntity existing = findById(id);
-        validateBasic(clientName, serviceId, date, startTime, endTime);
+
+        if (clientName == null || clientName.isBlank()) {
+            throw new ResponseStatusException(BAD_REQUEST, "clientName is required");
+        }
+        if (serviceId == null) {
+            throw new ResponseStatusException(BAD_REQUEST, "serviceId is required");
+        }
+        if (date == null || startTime == null || endTime == null) {
+            throw new ResponseStatusException(BAD_REQUEST, "date/startTime/endTime are required");
+        }
+        if (!endTime.isAfter(startTime)) {
+            throw new ResponseStatusException(BAD_REQUEST, "endTime must be after startTime");
+        }
 
         ServiceEntity service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Service not found with id: " + serviceId));
 
-        boolean overlap = appointmentRepository.existsOverlapExcludingId(date, id, startTime, endTime);
+        boolean overlap = appointmentRepository.existsOverlapExcludingId(date, id, startTime, endTime, AppointmentStatus.CANCELLED);
         if (overlap) {
             throw new ResponseStatusException(BAD_REQUEST, "Appointment overlaps with an existing appointment");
         }
@@ -83,23 +102,17 @@ public class AppointmentService {
         return appointmentRepository.save(existing);
     }
 
+    public AppointmentEntity changeStatus(Long id, AppointmentStatus status) {
+        AppointmentEntity existing = findById(id);
+        if (status == null) {
+            throw new ResponseStatusException(BAD_REQUEST, "status is required");
+        }
+        existing.setStatus(status);
+        return appointmentRepository.save(existing);
+    }
+
     public void delete(Long id) {
         AppointmentEntity existing = findById(id);
         appointmentRepository.delete(existing);
-    }
-
-    private void validateBasic(String clientName, Long serviceId, LocalDate date, LocalTime startTime, LocalTime endTime) {
-        if (clientName == null || clientName.isBlank()) {
-            throw new ResponseStatusException(BAD_REQUEST, "clientName is required");
-        }
-        if (serviceId == null) {
-            throw new ResponseStatusException(BAD_REQUEST, "serviceId is required");
-        }
-        if (date == null || startTime == null || endTime == null) {
-            throw new ResponseStatusException(BAD_REQUEST, "date/startTime/endTime are required");
-        }
-        if (!endTime.isAfter(startTime)) {
-            throw new ResponseStatusException(BAD_REQUEST, "endTime must be after startTime");
-        }
     }
 }

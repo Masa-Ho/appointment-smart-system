@@ -2,6 +2,9 @@ package com.masa.appointment.appointment.repo;
 
 import com.masa.appointment.appointment.entity.AppointmentEntity;
 import com.masa.appointment.appointment.entity.AppointmentStatus;
+import com.masa.appointment.user.entity.UserEntity;
+import com.masa.appointment.user.entity.UserEntity;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +16,7 @@ import java.util.List;
 public interface AppointmentRepository extends JpaRepository<AppointmentEntity, Long> {
 
     List<AppointmentEntity> findByDate(LocalDate date);
+    List<AppointmentEntity> findByStaff(UserEntity staff);
 
     // create overlap check (ignore CANCELLED)
     @Query("""

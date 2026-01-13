@@ -1,7 +1,9 @@
 package com.masa.appointment.user.service;
 
+import com.masa.appointment.user.entity.Role;
 import com.masa.appointment.user.entity.UserEntity;
 import com.masa.appointment.user.repo.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -14,29 +16,59 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    public UserEntity create(String fullName, String email, String role) {
+    public UserEntity registerCustomer(String fullName, String email, String rawPassword) {
+
+    if (userRepository.findByEmail(email).isPresent()) {
+        throw new RuntimeException("Email already exists");
+    }
+
+    UserEntity user = new UserEntity();
+    user.setFullName(fullName);
+    user.setEmail(email);
+    user.setPassword(passwordEncoder.encode(rawPassword));
+    user.setRole(Role.CUSTOMER);
+
+    return userRepository.save(user);
+}
+
+
+    public UserEntity create(String fullName, String email,  String password,
+                                    String roleStr) {
+
+         Role role;
+
+        if (roleStr == null || roleStr.isBlank()) {
+            role = Role.CUSTOMER;
+        } else {
+            role = Role.valueOf(roleStr.toUpperCase());
+        }
+
+
         if (fullName == null || fullName.isBlank()) {
             throw new ResponseStatusException(BAD_REQUEST, "fullName is required");
         }
 
         if (email != null && !email.isBlank()) {
-            boolean exists = userRepository.existsByEmail(email);
-            if (exists) {
+            if (userRepository.existsByEmail(email.trim())) {
                 throw new ResponseStatusException(BAD_REQUEST, "email already exists");
             }
         }
 
-        UserEntity u = new UserEntity();
-        u.setFullName(fullName);
-        u.setEmail((email == null || email.isBlank()) ? null : email.trim());
-        u.setRole((role == null || role.isBlank()) ? "client" : role.trim());
+         UserEntity user = new UserEntity();
+        user.setFullName(fullName);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRole(role);
 
-        return userRepository.save(u);
+        return userRepository.save(user);
     }
 
     public List<UserEntity> findAll() {
@@ -45,15 +77,23 @@ public class UserService {
 
     public UserEntity findById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "User not found with id: " + id));
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                NOT_FOUND,
+                                "User not found with id " + id
+                        )
+                );
     }
 
     public UserEntity update(Long id, String fullName, String email, String role) {
-        UserEntity existing = findById(id);
+
+        UserEntity user = findById(id);
 
         if (fullName == null || fullName.isBlank()) {
             throw new ResponseStatusException(BAD_REQUEST, "fullName is required");
         }
+
+        user.setFullName(fullName.trim());
 
         if (email != null && !email.isBlank()) {
             userRepository.findByEmail(email.trim()).ifPresent(other -> {
@@ -61,19 +101,17 @@ public class UserService {
                     throw new ResponseStatusException(BAD_REQUEST, "email already exists");
                 }
             });
-            existing.setEmail(email.trim());
-        } else {
-            existing.setEmail(null);
+            user.setEmail(email.trim());
         }
 
-        existing.setFullName(fullName.trim());
-        existing.setRole((role == null || role.isBlank()) ? existing.getRole() : role.trim());
+        if (role != null && !role.isBlank()) {
+            user.setRole(Role.valueOf(role.toUpperCase()));
+        }
 
-        return userRepository.save(existing);
+        return userRepository.save(user);
     }
 
     public void delete(Long id) {
-        UserEntity existing = findById(id);
-        userRepository.delete(existing);
+        userRepository.delete(findById(id));
     }
 }

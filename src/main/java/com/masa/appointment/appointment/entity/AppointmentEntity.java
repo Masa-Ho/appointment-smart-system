@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import com.masa.appointment.user.entity.UserEntity;
 
 
 @Entity
@@ -18,6 +19,7 @@ public class AppointmentEntity {
     @Column(nullable = false)
     private String clientName;
 
+
     @Column(nullable = false)
     private LocalDate date;
 
@@ -30,6 +32,15 @@ public class AppointmentEntity {
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "service_id", nullable = false)
     private ServiceEntity service;
+
+@ManyToOne(fetch = FetchType.EAGER)
+@JoinColumn(name = "staff_id")
+private com.masa.appointment.user.entity.UserEntity staff;
+
+@ManyToOne(fetch = FetchType.EAGER)
+@JoinColumn(name = "customer_id", nullable = false)
+private UserEntity customer;
+
 
     @Enumerated(EnumType.STRING)
     private AppointmentStatus status = AppointmentStatus.PENDING;
@@ -56,5 +67,20 @@ public class AppointmentEntity {
     public AppointmentStatus getStatus() {return status;}
 
     public void setStatus(AppointmentStatus status) {this.status = status;}
+public UserEntity getStaff() {
+    return staff;
+}
+
+public void setStaff(UserEntity staff) {
+    this.staff = staff;
+}
+
+public UserEntity getCustomer() {
+    return customer;
+}
+
+public void setCustomer(UserEntity customer) {
+    this.customer = customer;
+}
 
 }

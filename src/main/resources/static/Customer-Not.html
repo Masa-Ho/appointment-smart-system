@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Notifications</title>
+</head>
+<body>
+<h1>Customer – Live Notifications</h1>
+
+<label>
+    Your Email:
+    <input id="email" type="text" placeholder="example@gmail.com">
+</label>
+
+<button onclick="connect()">Start Listening</button>
+
+<pre id="log"></pre>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+<script>
+    let stompClient = null;
+
+    function log(message) {
+        const logEl = document.getElementById('log');
+        logEl.textContent += message + "\n";
+    }
+
+    function connect() {
+        const rawEmail = document.getElementById("email").value.trim();
+
+        if (!rawEmail) {
+            alert("Please enter your email");
+            return;
+        }
+
+    
+        const safeEmail = rawEmail.replace(/\./g, "_").replace(/@/g, "_");
+
+        const socket = new SockJS('https://localhost:8443/ws');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function () {
+            log("Connected as Customer: " + rawEmail);
+
+            const destination = "/topic/customer/" + safeEmail;
+            console.log("SUBSCRIBING TO:", destination);
+
+            stompClient.subscribe(destination, function (msg) {
+                log(" Notification:\n" + msg.body + "\n");
+            });
+        });
+    }
+</script>
+</body>
+</html>

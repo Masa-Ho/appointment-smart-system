@@ -16,7 +16,7 @@ public class ServiceService {
     }
 
     public ServiceEntity create(ServiceEntity serviceEntity) {
-        serviceEntity.setId(null); // تأكيد أنه create
+        serviceEntity.setId(null); 
         return serviceRepository.save(serviceEntity);
     }
 

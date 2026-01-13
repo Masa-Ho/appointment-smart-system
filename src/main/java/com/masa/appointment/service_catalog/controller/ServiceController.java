@@ -5,6 +5,7 @@ import com.masa.appointment.service_catalog.service.ServiceService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class ServiceController {
         this.serviceService = serviceService;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ServiceEntity create(@Valid @RequestBody ServiceEntity serviceEntity) {
@@ -34,11 +36,13 @@ public class ServiceController {
         return serviceService.findById(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ServiceEntity update(@PathVariable Long id, @Valid @RequestBody ServiceEntity serviceEntity) {
         return serviceService.update(id, serviceEntity);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
